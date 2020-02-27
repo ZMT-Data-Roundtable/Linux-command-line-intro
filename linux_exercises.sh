@@ -28,9 +28,16 @@ ls
 man ls
 
 # Task: Show hidden files.
+ls -a
+
 # Task: Show detailed file (and directory) information. What does detailed information mean?
+ls -l
+
 # Task: List directory contents by date last modified.
+ls -ltr
+
 # Task: List directory contents sorted by file size (human readable output).
+ls -lrSh
 
 # navigation shortcuts
 cd .
@@ -81,13 +88,15 @@ cat > test2.txt
 # naming conventions: NO SPACES OR SPECIAL CHARACTERS IN FILE AND DIRECTORY NAMES!!!
 
 # Task: Save the list of contents of your directory in a text file.
+ls -l > dir_ls.txt
 
 # Combining commands (pipe: |)
 # Task: Count the contents of your directory.
+ls -1 | wc -l
 
 # Wildcards (*)
 # Task: only list .txt files in your directory.
-
+ls -1 *.txt | wc -l
 
 
 ### Copy, rename and remove files
@@ -102,10 +111,13 @@ mv test2_copy.txt test2b.txt
 rm test2b.txt
 
 # Task: Exit Test_dir (move one level up) and delete directory.
+rmdir Test_dir # if emtpy
+rm -rf Test_dir # remove by force
+
 # Task: Which options do you have to delete directories and why is one of them so dangerous?
 
 # Create text file with ~5 lines of text on local computer and transfer file with scp to server
-scp test_file.txt user@server:~/test_file.txt
+scp test_file.txt chh@ecomod05:~/test_file.txt
 
 
 
@@ -131,18 +143,23 @@ chmod g+w dummy.fasta
 less dummy.fasta
 
 # Task: View file content but cut lines at window edge.
+less -S dummy.fasta
 
 # Count number of sequences, i.e. search for recurring pattern and count occurrences
 grep -c '^>' dummy.fasta
 
-# How many unique sequences (only containing ATCG) are there (translation: do not select lines which contain non-DNA characters)
+# How many unique sequences (only containing ATCG) are there? (translation: do not select lines which contain non-DNA characters)
 grep -v '[^ACGT]' dummy.fasta | sort | uniq | wc -l
 
 # Task: Why do we have to sort before the uniq?
 # Task: Which other option are there to extract only the sequence lines from the file, and which option is fastest?
+time grep '^[ACTG]\+$' dummy.fasta > tmp
+time grep -v '[^ACGT]' dummy.fasta > tmp
 
 # Replace all minus with dots
 sed 's/-/\./g' dummy.fasta > dummy2.fasta
+# or every colon with underscore
+sed 's/:/_/g' dummy.fasta > dummy2.fasta
 
 # Task: What is the exact meaning of the sed command
 
@@ -151,6 +168,7 @@ grep '^>' dummy.fasta | head -3 | sed 's/^>//' > select.accnos
 grep '^>' dummy.fasta | tail -3 | sed 's/^>//' >> select.accnos
 
 # Task: Search for these accession numbers (and corresponding sequences) in original fasta file and save in new fasta file
+grep -A1 -F -f select.accnos dummy.fasta | sed '/^--$/d' > select.fasta
 
 
 
@@ -189,6 +207,7 @@ paste <(grep '^>' dummy.fasta | sed 's/^>//') <(grep -v '^>' dummy.fasta | perl 
 awk -v threshold=98 '($3 + $13) / 2 >= threshold' dummy.blastout > filtered.blastout
 
 # Task: How many sequences were classified with these thresholds
+cut -f1 filtered.blastout | uniq | wc -l
 
 # Only select the best match for each sequence
 sort -k1,1 -k12,12gr -k11,11g filtered.blastout | sort -u -k1,1 --merge > best.blastout
@@ -197,7 +216,20 @@ sort -k1,1 -k12,12gr -k11,11g filtered.blastout | sort -u -k1,1 --merge > best.b
 cut -f1,2,3,13 best.blastout > dummy_blast_hits.txt
 
 # Task: Add another column with the sequence length to dummy_blast_hits.txt
+cut -f1 dummy_blast_hits.txt | grep -F -f - seq_lengths.txt > tmp
+diff <(cut -f1 dummy_blast_hits.txt) <(cut -f1 tmp)
+# not good
+
+sort -k1,1 dummy_blast_hits.txt > dummy_blast_hits_sorted.txt
+sort -k1,1 tmp > tmp_sorted
+diff <(cut -f1 dummy_blast_hits_sorted.txt) <(cut -f1 tmp_sorted)
+# good :)
+
+cut -f2 tmp_sorted | paste dummy_blast_hits_sorted.txt - > dummy_blast_hits_length.txt
+rm tmp*
+
 # Task: Which is the most abundant sequence in dummy.fasta?
+grep -v '[^ACGT]' dummy.fasta | sort | uniq -c | sort -k1,1gr | head -1
 
 
 
@@ -234,6 +266,9 @@ du -sh ./
 
 # How many CPUs and how much RAM is currently being used
 htop
+
+# To kill a job:
+kill <PID>
 
 # Disconnect during long running commands: use a screen
 
